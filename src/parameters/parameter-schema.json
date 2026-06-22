@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0.0",
-  "description": "Rich Parameter schema for S.W.E.I - supports clarifying questions, examples, failure cases, weighting, and future recursive improvement.",
+  "schema_version": "2.0.0",
+  "description": "Finalized S.W.E.I Parameter Schema - Staged Architecture v2",
   "parameter": {
     "type": "object",
     "properties": {
@@ -9,30 +9,30 @@
       "subcategory": { "type": "string" },
       "version": { "type": "integer" },
       "status": { "enum": ["stable", "experimental", "deprecated"] },
+      "intent_type": { "enum": ["atomic", "composite", "router", "tool", "memory", "reasoning"] },
+      "priority": { "type": "integer" },
       "triggers": { "type": "array", "items": { "type": "string" } },
-      "clarifying_questions": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "id": { "type": "string" },
-            "question": { "type": "string" },
-            "type": { "enum": ["text", "multiple_choice", "boolean"] },
-            "options": { "type": "array", "items": { "type": "string" } },
-            "required": { "type": "boolean" }
-          }
-        }
-      },
+      "activation_threshold": { "type": "number" },
+      "routing_strategy": { "enum": ["direct", "multi_step", "tool_augmented", "hybrid"] },
+      "requires_context": { "type": "boolean" },
+      "requires_memory": { "type": "boolean" },
+      "requires_tools": { "type": "boolean" },
+      "tool_dependencies": { "type": "array", "items": { "type": "string" } },
+      "clarifying_questions": { "type": "array" },
       "response_template": { "type": "string" },
+      "fallback_intents": { "type": "array", "items": { "type": "string" } },
       "examples": { "type": "array" },
       "failure_cases": { "type": "array" },
       "confidence": { "type": "number" },
-      "weight": { "type": "number" },
-      "activation": { "type": "object" },
+      "success_rate": { "type": "number" },
+      "failure_rate": { "type": "number" },
+      "execution_cost": { "type": "number" },
+      "token_cost": { "type": "number" },
+      "reward_score": { "type": "number" },
+      "penalty_score": { "type": "number" },
       "source": { "type": "string" },
-      "last_updated": { "type": "string" },
-      "related_parameters": { "type": "array", "items": { "type": "string" } },
-      "metadata": { "type": "object" }
+      "created": { "type": "string" },
+      "last_updated": { "type": "string" }
     }
   }
 }

@@ -1,12 +1,17 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "last_updated": "2026-06-22",
-  "total_parameters": 10,
+  "total_parameters": 15,
   "categories": [
     {
       "id": "general",
       "files": ["general/general.json"],
       "priority": 100
+    },
+    {
+      "id": "routing",
+      "files": ["routing/router.json"],
+      "priority": 95
     }
   ]
 }
