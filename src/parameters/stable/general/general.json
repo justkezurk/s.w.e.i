@@ -1,102 +1,12 @@
 [
-  {
-    "id": "general-greeting-001",
-    "category": "general",
-    "subcategory": "conversation",
-    "version": 1,
-    "status": "stable",
-    "triggers": ["hello", "hi", "hey", "good morning", "good afternoon"],
-    "clarifying_questions": [],
-    "response_template": "Hello! How can I help you today?",
-    "examples": [
-      {"context": "User says hello", "response": "Hello! How can I help you today?"}
-    ],
-    "failure_cases": [],
-    "confidence": 0.98,
-    "weight": 90,
-    "source": "Core conversation training",
-    "last_updated": "2026-06-22"
-  },
-  {
-    "id": "general-clarify-vague-001",
-    "category": "general",
-    "subcategory": "conversation",
-    "version": 1,
-    "status": "stable",
-    "triggers": ["how", "what", "why", "explain", "help me with"],
-    "clarifying_questions": [
-      {
-        "id": "q1",
-        "question": "Could you give me a bit more context? What specifically are you trying to do or understand?",
-        "type": "text",
-        "required": true
-      }
-    ],
-    "response_template": "To give you the best answer, could you tell me more about what you're trying to achieve?",
-    "examples": [],
-    "failure_cases": [],
-    "confidence": 0.9,
-    "weight": 85,
-    "source": "Conversation training",
-    "last_updated": "2026-06-22"
-  },
-  {
-    "id": "math-basic-addition-001",
-    "category": "general",
-    "subcategory": "math",
-    "version": 1,
-    "status": "stable",
-    "triggers": ["plus", "add", "+", "sum"],
-    "clarifying_questions": [],
-    "response_template": "The result is {{result}}.",
-    "examples": [
-      {"context": "2 + 2", "response": "The result is 4."}
-    ],
-    "failure_cases": [
-      {"situation": "User inputs non-math text", "reason": "Not a math expression", "recommended_fix": "Only use for clear arithmetic"}
-    ],
-    "confidence": 0.95,
-    "weight": 80,
-    "source": "Deterministic math layer",
-    "last_updated": "2026-06-22"
-  },
-  {
-    "id": "general-thanks-001",
-    "category": "general",
-    "subcategory": "conversation",
-    "version": 1,
-    "status": "stable",
-    "triggers": ["thank you", "thanks", "appreciate it"],
-    "clarifying_questions": [],
-    "response_template": "You're welcome! Is there anything else I can help with?",
-    "examples": [],
-    "failure_cases": [],
-    "confidence": 0.97,
-    "weight": 75,
-    "source": "Core conversation training",
-    "last_updated": "2026-06-22"
-  },
-  {
-    "id": "general-ask-more-001",
-    "category": "general",
-    "subcategory": "conversation",
-    "version": 1,
-    "status": "stable",
-    "triggers": ["tell me more", "can you explain", "go deeper"],
-    "clarifying_questions": [
-      {
-        "id": "q1",
-        "question": "What level of detail are you looking for? (basic overview, step-by-step, or technical/deep dive)",
-        "type": "multiple_choice",
-        "options": ["Basic overview", "Step-by-step", "Technical / deep dive"]
-      }
-    ],
-    "response_template": "Sure, I can go into more detail. What level would you prefer?",
-    "examples": [],
-    "failure_cases": [],
-    "confidence": 0.88,
-    "weight": 70,
-    "source": "Conversation training",
-    "last_updated": "2026-06-22"
-  }
+  {"id":"general-greeting-001","category":"general","subcategory":"conversation","version":1,"status":"stable","triggers":["hello","hi","hey","good morning","good afternoon","good evening"],"clarifying_questions":[],"response_template":"Hello! How can I help you today?","examples":[{"context":"User greets","response":"Hello! How can I help you today?"}],"failure_cases":[],"confidence":0.98,"weight":90,"source":"Core conversation","last_updated":"2026-06-22"},
+  {"id":"general-clarify-vague-001","category":"general","subcategory":"conversation","version":1,"status":"stable","triggers":["how","what","why","explain","help me","tell me about"],"clarifying_questions":[{"id":"q1","question":"Could you give me a bit more context about what you're trying to do or understand?","type":"text","required":true}],"response_template":"To give you the best answer, could you tell me more about what you're trying to achieve?","examples":[],"failure_cases":[],"confidence":0.9,"weight":85,"source":"Conversation training","last_updated":"2026-06-22"},
+  {"id":"math-basic-add-001","category":"general","subcategory":"math","version":1,"status":"stable","triggers":["plus","add","+"],"clarifying_questions":[],"response_template":"The result is {{result}}.","examples":[{"context":"2 + 3","response":"The result is 5."}],"failure_cases":[],"confidence":0.95,"weight":80,"source":"Deterministic math","last_updated":"2026-06-22"},
+  {"id":"math-basic-subtract-001","category":"general","subcategory":"math","version":1,"status":"stable","triggers":["minus","subtract","-"],"clarifying_questions":[],"response_template":"The result is {{result}}.","examples":[],"failure_cases":[],"confidence":0.94,"weight":78,"source":"Deterministic math","last_updated":"2026-06-22"},
+  {"id":"math-basic-multiply-001","category":"general","subcategory":"math","version":1,"status":"stable","triggers":["times","multiply","*","x"],"clarifying_questions":[],"response_template":"The result is {{result}}.","examples":[],"failure_cases":[],"confidence":0.94,"weight":78,"source":"Deterministic math","last_updated":"2026-06-22"},
+  {"id":"math-basic-divide-001","category":"general","subcategory":"math","version":1,"status":"stable","triggers":["divide","/"],"clarifying_questions":[],"response_template":"The result is {{result}}.","examples":[],"failure_cases":[{"situation":"Division by zero","reason":"Mathematically undefined","recommended_fix":"Avoid dividing by zero"}],"confidence":0.93,"weight":76,"source":"Deterministic math","last_updated":"2026-06-22"},
+  {"id":"general-thanks-001","category":"general","subcategory":"conversation","version":1,"status":"stable","triggers":["thank you","thanks","appreciate it","thank you very much"],"clarifying_questions":[],"response_template":"You're welcome! Is there anything else I can help with?","examples":[],"failure_cases":[],"confidence":0.97,"weight":75,"source":"Core conversation","last_updated":"2026-06-22"},
+  {"id":"general-goodbye-001","category":"general","subcategory":"conversation","version":1,"status":"stable","triggers":["bye","goodbye","see you","later"],"clarifying_questions":[],"response_template":"Goodbye! Feel free to come back anytime.","examples":[],"failure_cases":[],"confidence":0.96,"weight":70,"source":"Core conversation","last_updated":"2026-06-22"},
+  {"id":"general-ask-more-detail-001","category":"general","subcategory":"conversation","version":1,"status":"stable","triggers":["tell me more","go deeper","more details","elaborate"],"clarifying_questions":[{"id":"q1","question":"Would you like a basic overview, step-by-step explanation, or a more technical/deep dive?","type":"multiple_choice","options":["Basic overview","Step-by-step","Technical / deep dive"]}],"response_template":"Sure, I can provide more detail. What level would be most helpful?","examples":[],"failure_cases":[],"confidence":0.88,"weight":72,"source":"Conversation training","last_updated":"2026-06-22"},
+  {"id":"general-uncertain-001","category":"general","subcategory":"conversation","version":1,"status":"stable","triggers":["i don't know","not sure","maybe","perhaps"],"clarifying_questions":[],"response_template":"No problem. Would you like me to suggest some possibilities or ask a few questions to narrow it down?","examples":[],"failure_cases":[],"confidence":0.85,"weight":65,"source":"Conversation training","last_updated":"2026-06-22"}
 ]
