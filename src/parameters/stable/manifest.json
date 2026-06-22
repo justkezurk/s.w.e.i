@@ -1,6 +1,12 @@
 {
   "version": "1.0.0",
   "last_updated": "2026-06-22",
-  "total_parameters": 0,
-  "categories": []
+  "total_parameters": 5,
+  "categories": [
+    {
+      "id": "general",
+      "files": ["general/general.json"],
+      "priority": 100
+    }
+  ]
 }
