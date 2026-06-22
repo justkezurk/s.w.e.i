@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Rich Parameter schema for S.W.E.I - supports clarifying questions, examples, failure cases, weighting, and future recursive improvement.",
+  "parameter": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string" },
+      "category": { "type": "string" },
+      "subcategory": { "type": "string" },
+      "version": { "type": "integer" },
+      "status": { "enum": ["stable", "experimental", "deprecated"] },
+      "triggers": { "type": "array", "items": { "type": "string" } },
+      "clarifying_questions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "question": { "type": "string" },
+            "type": { "enum": ["text", "multiple_choice", "boolean"] },
+            "options": { "type": "array", "items": { "type": "string" } },
+            "required": { "type": "boolean" }
+          }
+        }
+      },
+      "response_template": { "type": "string" },
+      "examples": { "type": "array" },
+      "failure_cases": { "type": "array" },
+      "confidence": { "type": "number" },
+      "weight": { "type": "number" },
+      "activation": { "type": "object" },
+      "source": { "type": "string" },
+      "last_updated": { "type": "string" },
+      "related_parameters": { "type": "array", "items": { "type": "string" } },
+      "metadata": { "type": "object" }
+    }
+  }
+}
