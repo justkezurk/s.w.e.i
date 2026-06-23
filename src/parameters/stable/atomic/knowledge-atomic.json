@@ -454,5 +454,43 @@
     "source": "new_batch_RULE_529",
     "created": "2026-06-23",
     "last_updated": "2026-06-23"
+  },
+  {
+    "id": "knowledge-physics-bose-einstein-001",
+    "intent_type": "atomic",
+    "parent_router": "router-knowledge-physics-001",
+    "category": "knowledge",
+    "subcategory": "physics",
+    "version": 1,
+    "status": "stable",
+    "priority": 83,
+    "triggers": ["bose einstein condensate", "fifth state of matter"],
+    "activation_threshold": 0.80,
+    "routing_strategy": "direct",
+    "requires_context": false,
+    "requires_memory": false,
+    "requires_tools": false,
+    "tool_dependencies": [],
+    "clarifying_questions": [],
+    "response_template": "",
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-science-001"],
+    "child_intents": [],
+    "knowledge_reference": {
+      "domain": "physics",
+      "concept": "bose_einstein_condensate",
+      "legacy_rule_id": "RULE_506"
+    },
+    "examples": [],
+    "failure_cases": [],
+    "confidence": 0.90,
+    "success_rate": 0.89,
+    "failure_rate": 0.11,
+    "execution_cost": 1,
+    "token_cost": 2,
+    "reward_score": 0,
+    "penalty_score": 0,
+    "source": "new_batch_RULE_506",
+    "created": "2026-06-23",
+    "last_updated": "2026-06-23"
   }
 ]
