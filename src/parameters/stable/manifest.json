@@ -1,8 +1,8 @@
 {
   "version": "2.0.0",
   "last_updated": "2026-06-23",
-  "total_parameters": 49,
-    "categories": [
+  "total_parameters": 52,
+  "categories": [
     {
       "id": "general",
       "files": ["general/general.json"],
