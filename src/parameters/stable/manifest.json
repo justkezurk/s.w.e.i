@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "last_updated": "2026-06-23",
-  "total_parameters": 237,
+  "total_parameters": 244,
   "categories": [
     {
       "id": "general",
@@ -15,7 +15,7 @@
     },
     {
       "id": "atomic",
-      "files": ["atomic/conversation-atomic.json", "atomic/math-atomic.json", "atomic/reasoning-atomic.json", "atomic/tool-atomic.json", "atomic/cross-domain-atomic.json", "atomic/knowledge-atomic.json"],
+      "files": ["atomic/conversation-atomic.json", "atomic/math-atomic.json", "atomic/reasoning-atomic.json", "atomic/tool-atomic.json", "atomic/cross-domain-atomic.json", "atomic/knowledge-atomic.json", "atomic/capability-atomic.json"],
       "priority": 85
     }
   ]

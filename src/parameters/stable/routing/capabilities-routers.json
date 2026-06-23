@@ -18,7 +18,7 @@
     "clarifying_questions": [],
     "response_template": "",
     "fallback_intents": ["router-context-recovery-001"],
-    "child_intents": [],
+    "child_intents": ["capability-general-001", "capability-coding-001", "capability-reasoning-001", "capability-math-001", "capability-tools-001", "capability-limitations-001", "capability-writing-001"],
     "tool_execution_mode": "direct",
     "max_tool_calls": 2,
     "max_tool_depth": 1,
