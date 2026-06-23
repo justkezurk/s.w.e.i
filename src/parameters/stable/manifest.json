@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
-  "last_updated": "2026-06-22",
-  "total_parameters": 20,
+  "last_updated": "2026-06-23",
+  "total_parameters": 32,
   "categories": [
     {
       "id": "general",
@@ -10,7 +10,7 @@
     },
     {
       "id": "routing",
-      "files": ["routing/router.json"],
+      "files": ["routing/conversation-routers.json"],
       "priority": 95
     }
   ]
