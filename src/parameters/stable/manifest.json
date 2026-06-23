@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "last_updated": "2026-06-23",
-  "total_parameters": 139,
+  "total_parameters": 145,
   "categories": [
     {
       "id": "general",
@@ -15,7 +15,7 @@
     },
     {
       "id": "atomic",
-      "files": ["atomic/conversation-atomic.json", "atomic/math-atomic.json"],
+      "files": ["atomic/conversation-atomic.json", "atomic/math-atomic.json", "atomic/reasoning-atomic.json"],
       "priority": 90
     }
   ]
