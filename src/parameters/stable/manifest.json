@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "last_updated": "2026-06-23",
-  "total_parameters": 120,
+  "total_parameters": 129,
   "categories": [
     {
       "id": "general",
@@ -10,7 +10,7 @@
     },
     {
       "id": "routing",
-      "files": ["routing/conversation-routers.json", "routing/math-routers.json"],
+      "files": ["routing/conversation-routers.json", "routing/math-routers.json", "routing/tool-routers.json", "routing/reasoning-routers.json"],
       "priority": 95
     },
     {
