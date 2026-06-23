@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "last_updated": "2026-06-23",
-  "total_parameters": 52,
+  "total_parameters": 61,
   "categories": [
     {
       "id": "general",
@@ -12,6 +12,11 @@
       "id": "routing",
       "files": ["routing/conversation-routers.json"],
       "priority": 95
+    },
+    {
+      "id": "atomic",
+      "files": ["atomic/conversation-atomic.json"],
+      "priority": 90
     }
   ]
 }
