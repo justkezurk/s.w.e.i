@@ -17,7 +17,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-science-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-science-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "physics",
@@ -55,7 +55,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-science-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-science-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "physics",
@@ -93,7 +93,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-science-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-science-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "physics",
@@ -131,7 +131,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-science-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-science-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "physics",
@@ -169,7 +169,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-science-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-science-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "biology",
@@ -207,7 +207,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-math-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-math-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "math",
@@ -245,7 +245,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-math-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-math-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "math",
@@ -283,7 +283,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-math-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-math-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "math",
@@ -321,7 +321,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-programming-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-programming-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "programming",
@@ -359,7 +359,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-programming-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-programming-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "programming",
@@ -397,7 +397,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-programming-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-programming-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "programming",
@@ -435,7 +435,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-programming-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-programming-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "programming",
@@ -473,7 +473,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-philosophy-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-philosophy-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "philosophy",
@@ -511,7 +511,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-philosophy-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-philosophy-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "philosophy",
@@ -549,7 +549,7 @@
     "tool_dependencies": [],
     "clarifying_questions": [],
     "response_template": "",
-    "fallback_intents": ["router-knowledge-philosophy-001"],
+    "fallback_intents": ["reasoning-explain-concept-001", "reasoning-teach-topic-001", "router-knowledge-philosophy-001"],
     "child_intents": [],
     "knowledge_reference": {
       "domain": "philosophy",

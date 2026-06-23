@@ -1,22 +1,22 @@
 {
   "version": "2.0.0",
-    "last_updated": "2026-06-23",
-    "total_parameters": 228,
-    "categories": [
-      {
-        "id": "general",
-        "files": ["general/general.json"],
-        "priority": 100
-      },
-      {
-        "id": "routing",
-        "files": ["routing/conversation-routers.json", "routing/math-routers.json", "routing/tool-routers.json", "routing/reasoning-routers.json", "routing/knowledge-routers.json"],
-        "priority": 95
-      },
-      {
-        "id": "atomic",
-        "files": ["atomic/conversation-atomic.json", "atomic/math-atomic.json", "atomic/reasoning-atomic.json", "atomic/tool-atomic.json", "atomic/cross-domain-atomic.json", "atomic/knowledge-atomic.json"],
-        "priority": 85
-      }
-    ]
-  }
+  "last_updated": "2026-06-23",
+  "total_parameters": 230,
+  "categories": [
+    {
+      "id": "general",
+      "files": ["general/general.json"],
+      "priority": 100
+    },
+    {
+      "id": "routing",
+      "files": ["routing/conversation-routers.json", "routing/math-routers.json", "routing/tool-routers.json", "routing/reasoning-routers.json", "routing/knowledge-routers.json"],
+      "priority": 95
+    },
+    {
+      "id": "atomic",
+      "files": ["atomic/conversation-atomic.json", "atomic/math-atomic.json", "atomic/reasoning-atomic.json", "atomic/tool-atomic.json", "atomic/cross-domain-atomic.json", "atomic/knowledge-atomic.json"],
+      "priority": 85
+    }
+  ]
+}
