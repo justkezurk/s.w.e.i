@@ -6,8 +6,8 @@ let parameters = { routers: [], atomics: [] };
 
 async function loadParameters() {
     try {
-        const routerFiles = ['src/parameters/stable/routing/conversation-routers.json', 'src/parameters/stable/routing/capabilities-routers.json'];
-        const atomicFiles = ['src/parameters/stable/atomic/conversation-atomic.json', 'src/parameters/stable/atomic/capability-atomic.json'];
+        const routerFiles = ['src/parameters/stable/routing/conversation-routers.json', 'src/parameters/stable/routing/capabilities-routers.json', 'src/parameters/stable/routing/reasoning-routers.json'];
+        const atomicFiles = ['src/parameters/stable/atomic/conversation-atomic.json', 'src/parameters/stable/atomic/capability-atomic.json', 'src/parameters/stable/atomic/reasoning-atomic.json'];
 
         for (const file of routerFiles) { try { const res = await fetch(file); parameters.routers.push(...await res.json()); } catch(e){} }
         for (const file of atomicFiles) { try { const res = await fetch(file); parameters.atomics.push(...await res.json()); } catch(e){} }
@@ -16,7 +16,7 @@ async function loadParameters() {
 
 window.addEventListener('load', () => { initFallbackModel(); loadParameters(); });
 
-// === EXPANDED GREETING SYSTEM ===
+// === GREETING SYSTEM ===
 const greetingTriggers = [
     'hey', 'hello', 'hi', 'yo', 'sup', "what's up", 'what up', 'watup', 'wadup', 'wassup',
     'sup tho', "what's good", 'whats good', 'aye', 'oi', 'how are you', 'how you doing', 'how you doin',
@@ -24,42 +24,22 @@ const greetingTriggers = [
 ];
 
 const greetingResponses = [
-    "What's good.",
-    "What it do.",
-    "Chillen. What's up with you?",
-    "Not much, what you on?",
-    "I'm good, how you feeling?",
-    "Sup tho.",
-    "Chillen. You tryna get into something?",
-    "I'm straight. What's on your mind?",
-    "Yo. What's good with you?",
-    "Nothin' heavy. What you got going on?",
-    "I'm cool. What you got?",
-    "Chillen like a villain. What's good?",
-    "I'm good. You?",
-    "Sup. You moving or just vibing?",
-    "Not too much. What you into right now?",
-    "I'm straight. How you been?",
-    "Yo yo. What's the word?",
-    "Chillen. You got something on your mind?",
-    "I'm good. What it look like?",
-    "Sup tho. You tryna talk or what?",
-    "I'm straight. What's the move?",
-    "Chillen. You need something or just saying what's up?",
-    "I'm good. You got time or you busy?",
+    "What's good.", "What it do.", "Chillen. What's up with you?", "Not much, what you on?",
+    "I'm good, how you feeling?", "Sup tho.", "Chillen. You tryna get into something?",
+    "I'm straight. What's on your mind?", "Yo. What's good with you?", "Nothin' heavy. What you got going on?",
+    "I'm cool. What you got?", "Chillen like a villain. What's good?", "I'm good. You?",
+    "Sup. You moving or just vibing?", "Not too much. What you into right now?", "I'm straight. How you been?",
+    "Yo yo. What's the word?", "Chillen. You got something on your mind?", "I'm good. What it look like?",
+    "Sup tho. You tryna talk or what?", "I'm straight. What's the move?",
+    "Chillen. You need something or just saying what's up?", "I'm good. You got time or you busy?",
     "Yo. What's the vibe?"
 ];
 
 const conversationSeeds = [
-    "Is there anything you tryna talk about?",
-    "You got something specific on your mind?",
-    "You tryna get some shit done or just vibing?",
-    "Anything I can help you with?",
-    "What you got going on?",
-    "You need something or we just kicking it?",
-    "You got a goal in mind or we just talking?",
-    "What can I do for you?",
-    "You tryna build or just catch up?"
+    "Is there anything you tryna talk about?", "You got something specific on your mind?",
+    "You tryna get some shit done or just vibing?", "Anything I can help you with?",
+    "What you got going on?", "You need something or we just kicking it?",
+    "You got a goal in mind or we just talking?", "What can I do for you?", "You tryna build or just catch up?"
 ];
 
 function isGreeting(input) {
@@ -69,8 +49,6 @@ function isGreeting(input) {
 
 function getGreetingResponse() {
     let response = greetingResponses[Math.floor(Math.random() * greetingResponses.length)];
-    
-    // 40% chance to add a light conversation seed
     if (Math.random() < 0.4) {
         const seed = conversationSeeds[Math.floor(Math.random() * conversationSeeds.length)];
         response += " " + seed;
@@ -117,25 +95,50 @@ async function getNeuralFallback(prompt, options = {}) {
     }
 }
 
-// === CONFIDENCE ===
+// === IMPROVED CONFIDENCE SCORING ===
 function getConfidence(input) {
     const lower = input.toLowerCase().trim();
-    let bestScore = 0.35;
+    let score = 0.3;
 
+    // Check routers
     for (const router of parameters.routers) {
-        if (!router.triggers) continue;
+        if (!router.triggers || router.triggers.length === 0) continue;
+        let routerMatch = false;
+
         for (const trigger of router.triggers) {
-            if (lower.includes(trigger.toLowerCase())) bestScore = Math.max(bestScore, (router.activation_threshold || 0.6) + 0.1);
+            if (lower.includes(trigger.toLowerCase())) {
+                routerMatch = true;
+                break;
+            }
+        }
+
+        if (routerMatch) {
+            score = Math.max(score, (router.activation_threshold || 0.55) + 0.15);
         }
     }
+
+    // Check atomics
     for (const atomic of parameters.atomics) {
-        if (!atomic.triggers) continue;
+        if (!atomic.triggers || atomic.triggers.length === 0) continue;
+        let atomicMatch = false;
+
         for (const trigger of atomic.triggers) {
-            if (lower.includes(trigger.toLowerCase())) bestScore = Math.max(bestScore, (atomic.activation_threshold || 0.65) + 0.08);
+            if (lower.includes(trigger.toLowerCase())) {
+                atomicMatch = true;
+                break;
+            }
+        }
+
+        if (atomicMatch) {
+            score = Math.max(score, (atomic.activation_threshold || 0.6) + 0.12);
         }
     }
-    if (lower.length > 18) bestScore += 0.07;
-    return Math.max(0.2, Math.min(0.95, bestScore));
+
+    // Bonus for longer, more specific inputs
+    if (lower.length > 20) score += 0.08;
+    if (lower.split(' ').length > 7) score += 0.05;
+
+    return Math.max(0.2, Math.min(0.95, score));
 }
 
 function evaluateMath(input) {
@@ -163,18 +166,18 @@ async function sendMessage() {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
     let response = '';
+    const confidence = getConfidence(input);
 
     if (isGreeting(input)) {
         response = getGreetingResponse();
     } else if (evaluateMath(input) !== null) {
         response = `The answer is ${evaluateMath(input)}`;
+    } else if (confidence < 0.5 || needsClarification(input)) {
+        // Neural fallback only when confidence is genuinely low or clarification is needed
+        response = await getNeuralFallback(input);
     } else {
-        const confidence = getConfidence(input);
-        if (confidence < 0.52 || needsClarification(input)) {
-            response = await getNeuralFallback(input);
-        } else {
-            response = await getNeuralFallback(input, { maxTokens: 140, temperature: 0.6 });
-        }
+        // Higher confidence path - still using neural for now, but threshold is stricter
+        response = await getNeuralFallback(input, { maxTokens: 130, temperature: 0.55 });
     }
 
     const thinkingEl = document.getElementById(thinkingId);
