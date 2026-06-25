@@ -2,12 +2,97 @@ let modelPipeline = null;
 let modelLoading = false;
 let modelReady = false;
 
+// Parameter system (loaded dynamically)
+let parameters = {
+    routers: [],
+    atomics: []
+};
+
+async function loadParameters() {
+    try {
+        // Load key parameter files
+        const routerFiles = [
+            'src/parameters/stable/routing/conversation-routers.json',
+            'src/parameters/stable/routing/capabilities-routers.json',
+            'src/parameters/stable/routing/reasoning-routers.json'
+        ];
+
+        const atomicFiles = [
+            'src/parameters/stable/atomic/conversation-atomic.json',
+            'src/parameters/stable/atomic/capability-atomic.json',
+            'src/parameters/stable/atomic/reasoning-atomic.json'
+        ];
+
+        for (const file of routerFiles) {
+            try {
+                const res = await fetch(file);
+                const data = await res.json();
+                parameters.routers.push(...data);
+            } catch (e) {
+                console.warn('Could not load router file:', file);
+            }
+        }
+
+        for (const file of atomicFiles) {
+            try {
+                const res = await fetch(file);
+                const data = await res.json();
+                parameters.atomics.push(...data);
+            } catch (e) {
+                console.warn('Could not load atomic file:', file);
+            }
+        }
+
+        console.log(`Loaded ${parameters.routers.length} routers and ${parameters.atomics.length} atomics`);
+    } catch (error) {
+        console.error('Error loading parameters:', error);
+    }
+}
+
+window.addEventListener('load', () => {
+    initFallbackModel();
+    loadParameters();
+});
+
+// Improved confidence scoring using parameter system
+function getConfidence(input) {
+    const lower = input.toLowerCase().trim();
+    let bestScore = 0.3; // minimum base
+
+    // Check against loaded routers
+    for (const router of parameters.routers) {
+        if (!router.triggers || router.triggers.length === 0) continue;
+
+        for (const trigger of router.triggers) {
+            if (lower.includes(trigger.toLowerCase())) {
+                bestScore = Math.max(bestScore, (router.activation_threshold || 0.6) + 0.15);
+            }
+        }
+    }
+
+    // Check against atomics
+    for (const atomic of parameters.atomics) {
+        if (!atomic.triggers || atomic.triggers.length === 0) continue;
+
+        for (const trigger of atomic.triggers) {
+            if (lower.includes(trigger.toLowerCase())) {
+                bestScore = Math.max(bestScore, (atomic.activation_threshold || 0.7) + 0.1);
+            }
+        }
+    }
+
+    // Length and specificity bonuses
+    if (lower.length > 20) bestScore += 0.08;
+    if (lower.split(' ').length > 6) bestScore += 0.05;
+
+    return Math.max(0.15, Math.min(0.95, bestScore));
+}
+
 async function initFallbackModel() {
     if (modelPipeline || modelLoading) return;
     modelLoading = true;
 
     try {
-        console.log('Loading neural fallback model...');
         modelPipeline = await window.transformers.pipeline(
             'text-generation',
             'Xenova/Phi-3-mini-4k-instruct',
@@ -22,28 +107,6 @@ async function initFallbackModel() {
     modelLoading = false;
 }
 
-window.addEventListener('load', () => {
-    initFallbackModel();
-});
-
-// Simple confidence scoring (will be replaced by full router system later)
-function getConfidence(input) {
-    const lower = input.toLowerCase().trim();
-    let score = 0.5; // base confidence
-
-    // Boost confidence for clear, specific questions
-    if (lower.length > 15) score += 0.15;
-    if (lower.includes('how') || lower.includes('what') || lower.includes('why')) score += 0.1;
-    if (lower.includes('code') || lower.includes('explain') || lower.includes('calculate')) score += 0.1;
-
-    // Lower confidence for vague or very short inputs
-    if (lower.length < 6) score -= 0.25;
-    if (lower.split(' ').length < 4) score -= 0.15;
-    if (lower.includes('help') || lower.includes('do you') || lower.includes('can you')) score -= 0.1;
-
-    return Math.max(0.1, Math.min(0.95, score));
-}
-
 async function getNeuralFallback(prompt, options = {}) {
     try {
         if (!modelPipeline) {
@@ -55,7 +118,7 @@ async function getNeuralFallback(prompt, options = {}) {
         }
 
         const systemPrompt = `You are S.W.E.I, a helpful and direct AI assistant.
-Give clear, concise answers. Avoid asking too many clarifying questions unless the query is genuinely ambiguous.
+Give clear, concise answers. Avoid asking too many clarifying questions unless truly necessary.
 Be useful even with incomplete information.`;
 
         const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}\n\nAssistant:`;
@@ -77,12 +140,12 @@ Be useful even with incomplete information.`;
             response = response.slice(prompt.length).trim();
         }
 
-        response = response.replace(/^(Sure|Okay|Alright|Here you go)[,.]?\s*/i, '');
+        response = response.replace(/^(Sure|Okay|Alright)[,.]?\s*/i, '');
 
-        return response || "Let me think about that from another angle...";
+        return response || "Let me approach that differently...";
     } catch (error) {
         console.error('Neural fallback error:', error);
-        return "I'm having trouble with that right now. Try rephrasing?";
+        return "I'm having trouble processing that. Try rephrasing?";
     }
 }
 
@@ -125,11 +188,9 @@ async function sendMessage() {
     const mathResult = evaluateMath(input);
     if (mathResult !== null) {
         response = `The answer is ${mathResult}`;
-    } else if (confidence < 0.55 || needsClarification(input)) {
-        // Use neural fallback when confidence is low or clarification is needed
+    } else if (confidence < 0.52 || needsClarification(input)) {
         response = await getNeuralFallback(input, { maxTokens: 160, temperature: 0.65 });
     } else {
-        // Higher confidence path - still using neural for now, but could route to symbolic system later
         response = await getNeuralFallback(input, { maxTokens: 140, temperature: 0.6 });
     }
 
