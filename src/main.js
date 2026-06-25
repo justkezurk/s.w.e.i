@@ -95,46 +95,65 @@ async function getNeuralFallback(prompt, options = {}) {
     }
 }
 
-// === IMPROVED CONFIDENCE SCORING ===
+// === DIRECT SYMBOLIC RESPONSE FROM ATOMICS ===
+function tryDirectSymbolicResponse(input) {
+    const lower = input.toLowerCase().trim();
+    let bestMatch = null;
+    let bestScore = 0;
+
+    for (const atomic of parameters.atomics) {
+        if (!atomic.triggers || atomic.triggers.length === 0 || !atomic.response_template) continue;
+
+        let matchScore = 0;
+        for (const trigger of atomic.triggers) {
+            if (lower.includes(trigger.toLowerCase())) {
+                matchScore += 1;
+            }
+        }
+
+        if (matchScore > 0) {
+            const finalScore = matchScore * (atomic.activation_threshold || 0.6);
+            if (finalScore > bestScore) {
+                bestScore = finalScore;
+                bestMatch = atomic;
+            }
+        }
+    }
+
+    if (bestMatch && bestScore > 0.65) {
+        return bestMatch.response_template;
+    }
+
+    return null;
+}
+
+// === IMPROVED CONFIDENCE ===
 function getConfidence(input) {
     const lower = input.toLowerCase().trim();
     let score = 0.3;
 
-    // Check routers
     for (const router of parameters.routers) {
         if (!router.triggers || router.triggers.length === 0) continue;
         let routerMatch = false;
-
         for (const trigger of router.triggers) {
-            if (lower.includes(trigger.toLowerCase())) {
-                routerMatch = true;
-                break;
-            }
+            if (lower.includes(trigger.toLowerCase())) { routerMatch = true; break; }
         }
-
         if (routerMatch) {
             score = Math.max(score, (router.activation_threshold || 0.55) + 0.15);
         }
     }
 
-    // Check atomics
     for (const atomic of parameters.atomics) {
         if (!atomic.triggers || atomic.triggers.length === 0) continue;
         let atomicMatch = false;
-
         for (const trigger of atomic.triggers) {
-            if (lower.includes(trigger.toLowerCase())) {
-                atomicMatch = true;
-                break;
-            }
+            if (lower.includes(trigger.toLowerCase())) { atomicMatch = true; break; }
         }
-
         if (atomicMatch) {
             score = Math.max(score, (atomic.activation_threshold || 0.6) + 0.12);
         }
     }
 
-    // Bonus for longer, more specific inputs
     if (lower.length > 20) score += 0.08;
     if (lower.split(' ').length > 7) score += 0.05;
 
@@ -172,12 +191,20 @@ async function sendMessage() {
         response = getGreetingResponse();
     } else if (evaluateMath(input) !== null) {
         response = `The answer is ${evaluateMath(input)}`;
-    } else if (confidence < 0.5 || needsClarification(input)) {
-        // Neural fallback only when confidence is genuinely low or clarification is needed
-        response = await getNeuralFallback(input);
     } else {
-        // Higher confidence path - still using neural for now, but threshold is stricter
-        response = await getNeuralFallback(input, { maxTokens: 130, temperature: 0.55 });
+        // Try direct symbolic response first on high confidence
+        if (confidence >= 0.65) {
+            const directResponse = tryDirectSymbolicResponse(input);
+            if (directResponse) {
+                response = directResponse;
+            } else {
+                response = await getNeuralFallback(input, { maxTokens: 140, temperature: 0.6 });
+            }
+        } else if (confidence < 0.5 || needsClarification(input)) {
+            response = await getNeuralFallback(input);
+        } else {
+            response = await getNeuralFallback(input, { maxTokens: 130, temperature: 0.55 });
+        }
     }
 
     const thinkingEl = document.getElementById(thinkingId);
