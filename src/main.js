@@ -6,11 +6,24 @@ let parameters = { routers: [], atomics: [] };
 
 async function loadParameters() {
     try {
-        const routerFiles = ['src/parameters/stable/routing/conversation-routers.json', 'src/parameters/stable/routing/capabilities-routers.json', 'src/parameters/stable/routing/reasoning-routers.json'];
-        const atomicFiles = ['src/parameters/stable/atomic/conversation-atomic.json', 'src/parameters/stable/atomic/capability-atomic.json', 'src/parameters/stable/atomic/reasoning-atomic.json'];
+        // Expanded parameter loading for broader coverage
+        const routerFiles = [
+            'src/parameters/stable/routing/conversation-routers.json',
+            'src/parameters/stable/routing/capabilities-routers.json',
+            'src/parameters/stable/routing/reasoning-routers.json',
+            'src/parameters/stable/routing/knowledge-routers.json'
+        ];
+        const atomicFiles = [
+            'src/parameters/stable/atomic/conversation-atomic.json',
+            'src/parameters/stable/atomic/capability-atomic.json',
+            'src/parameters/stable/atomic/reasoning-atomic.json',
+            'src/parameters/stable/atomic/knowledge-atomic.json'
+        ];
 
         for (const file of routerFiles) { try { const res = await fetch(file); parameters.routers.push(...await res.json()); } catch(e){} }
         for (const file of atomicFiles) { try { const res = await fetch(file); parameters.atomics.push(...await res.json()); } catch(e){} }
+
+        console.log(`Loaded ${parameters.routers.length} routers and ${parameters.atomics.length} atomics`);
     } catch(e) {}
 }
 
@@ -95,24 +108,46 @@ async function getNeuralFallback(prompt, options = {}) {
     }
 }
 
-// === DIRECT SYMBOLIC RESPONSE FROM ATOMICS ===
+// === SMARTER DIRECT SYMBOLIC MATCHING ===
 function tryDirectSymbolicResponse(input) {
     const lower = input.toLowerCase().trim();
     let bestMatch = null;
     let bestScore = 0;
 
     for (const atomic of parameters.atomics) {
-        if (!atomic.triggers || atomic.triggers.length === 0 || !atomic.response_template) continue;
+        if (!atomic.triggers || atomic.triggers.length === 0) continue;
 
         let matchScore = 0;
+        let hasExactMatch = false;
+
         for (const trigger of atomic.triggers) {
-            if (lower.includes(trigger.toLowerCase())) {
+            const triggerLower = trigger.toLowerCase();
+
+            // Exact phrase priority (big boost)
+            if (lower === triggerLower || lower.includes(' ' + triggerLower + ' ') || lower.startsWith(triggerLower + ' ') || lower.endsWith(' ' + triggerLower)) {
+                matchScore += 3;
+                hasExactMatch = true;
+            } 
+            // Partial match
+            else if (lower.includes(triggerLower)) {
                 matchScore += 1;
             }
         }
 
         if (matchScore > 0) {
-            const finalScore = matchScore * (atomic.activation_threshold || 0.6);
+            // Base score from activation threshold + priority
+            let finalScore = matchScore * (atomic.activation_threshold || 0.6);
+
+            // Subcategory boosting (example: favor capability and reasoning over pure conversation for deeper queries)
+            if (atomic.subcategory === 'capability' || atomic.subcategory === 'reasoning' || atomic.subcategory === 'planning' || atomic.subcategory === 'root_cause') {
+                finalScore += 0.15;
+            }
+
+            // Bonus for having a good response_template
+            if (atomic.response_template && atomic.response_template.length > 10) {
+                finalScore += 0.1;
+            }
+
             if (finalScore > bestScore) {
                 bestScore = finalScore;
                 bestMatch = atomic;
@@ -120,14 +155,26 @@ function tryDirectSymbolicResponse(input) {
         }
     }
 
-    if (bestMatch && bestScore > 0.65) {
-        return bestMatch.response_template;
+    // Threshold for direct symbolic response (tuned to 0.68 for quality)
+    if (bestMatch && bestScore >= 0.68) {
+        // Prefer response_template if available
+        if (bestMatch.response_template) {
+            return bestMatch.response_template;
+        }
+        
+        // Fallback: use clarifying_questions as a light prompt if no template
+        if (bestMatch.clarifying_questions && bestMatch.clarifying_questions.length > 0) {
+            return bestMatch.clarifying_questions[0].question;
+        }
+
+        // Last resort: generic but safe
+        return "I can help with that. What specifically would you like to know or do?";
     }
 
     return null;
 }
 
-// === IMPROVED CONFIDENCE ===
+// === CONFIDENCE ===
 function getConfidence(input) {
     const lower = input.toLowerCase().trim();
     let score = 0.3;
@@ -192,7 +239,7 @@ async function sendMessage() {
     } else if (evaluateMath(input) !== null) {
         response = `The answer is ${evaluateMath(input)}`;
     } else {
-        // Try direct symbolic response first on high confidence
+        // High confidence path: try direct symbolic first
         if (confidence >= 0.65) {
             const directResponse = tryDirectSymbolicResponse(input);
             if (directResponse) {
