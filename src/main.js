@@ -6,24 +6,11 @@ let parameters = { routers: [], atomics: [] };
 
 async function loadParameters() {
     try {
-        // Expanded parameter loading for broader coverage
-        const routerFiles = [
-            'src/parameters/stable/routing/conversation-routers.json',
-            'src/parameters/stable/routing/capabilities-routers.json',
-            'src/parameters/stable/routing/reasoning-routers.json',
-            'src/parameters/stable/routing/knowledge-routers.json'
-        ];
-        const atomicFiles = [
-            'src/parameters/stable/atomic/conversation-atomic.json',
-            'src/parameters/stable/atomic/capability-atomic.json',
-            'src/parameters/stable/atomic/reasoning-atomic.json',
-            'src/parameters/stable/atomic/knowledge-atomic.json'
-        ];
+        const routerFiles = ['src/parameters/stable/routing/conversation-routers.json', 'src/parameters/stable/routing/capabilities-routers.json', 'src/parameters/stable/routing/reasoning-routers.json', 'src/parameters/stable/routing/knowledge-routers.json'];
+        const atomicFiles = ['src/parameters/stable/atomic/conversation-atomic.json', 'src/parameters/stable/atomic/capability-atomic.json', 'src/parameters/stable/atomic/reasoning-atomic.json', 'src/parameters/stable/atomic/knowledge-atomic.json'];
 
         for (const file of routerFiles) { try { const res = await fetch(file); parameters.routers.push(...await res.json()); } catch(e){} }
         for (const file of atomicFiles) { try { const res = await fetch(file); parameters.atomics.push(...await res.json()); } catch(e){} }
-
-        console.log(`Loaded ${parameters.routers.length} routers and ${parameters.atomics.length} atomics`);
     } catch(e) {}
 }
 
@@ -108,7 +95,7 @@ async function getNeuralFallback(prompt, options = {}) {
     }
 }
 
-// === SMARTER DIRECT SYMBOLIC MATCHING ===
+// === EVEN SMARTER DIRECT SYMBOLIC MATCHING ===
 function tryDirectSymbolicResponse(input) {
     const lower = input.toLowerCase().trim();
     let bestMatch = null;
@@ -118,34 +105,51 @@ function tryDirectSymbolicResponse(input) {
         if (!atomic.triggers || atomic.triggers.length === 0) continue;
 
         let matchScore = 0;
-        let hasExactMatch = false;
+        let exactMatchBonus = 0;
 
         for (const trigger of atomic.triggers) {
-            const triggerLower = trigger.toLowerCase();
+            const triggerLower = trigger.toLowerCase().trim();
 
-            // Exact phrase priority (big boost)
-            if (lower === triggerLower || lower.includes(' ' + triggerLower + ' ') || lower.startsWith(triggerLower + ' ') || lower.endsWith(' ' + triggerLower)) {
-                matchScore += 3;
-                hasExactMatch = true;
-            } 
-            // Partial match
-            else if (lower.includes(triggerLower)) {
-                matchScore += 1;
+            // Strong exact phrase matching
+            if (lower === triggerLower) {
+                exactMatchBonus = 5; // very strong exact match
+            } else if (lower.includes(triggerLower)) {
+                // Check for word boundaries for better partial matching
+                const regex = new RegExp('\\b' + triggerLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+                if (regex.test(lower)) {
+                    matchScore += 2;
+                } else {
+                    matchScore += 1;
+                }
             }
         }
 
-        if (matchScore > 0) {
-            // Base score from activation threshold + priority
-            let finalScore = matchScore * (atomic.activation_threshold || 0.6);
+        if (matchScore > 0 || exactMatchBonus > 0) {
+            let finalScore = (matchScore + exactMatchBonus) * (atomic.activation_threshold || 0.6);
 
-            // Subcategory boosting (example: favor capability and reasoning over pure conversation for deeper queries)
-            if (atomic.subcategory === 'capability' || atomic.subcategory === 'reasoning' || atomic.subcategory === 'planning' || atomic.subcategory === 'root_cause') {
+            // Use priority field if available
+            if (atomic.priority) {
+                finalScore += (atomic.priority / 100) * 0.2;
+            }
+
+            // intent_type boosting
+            if (atomic.intent_type === 'atomic') finalScore += 0.08;
+            if (atomic.intent_type === 'reasoning' || atomic.intent_type === 'capability') finalScore += 0.12;
+
+            // Subcategory boosting
+            const boostSubcategories = ['capability', 'reasoning', 'planning', 'root_cause', 'optimization', 'evaluation'];
+            if (boostSubcategories.includes(atomic.subcategory)) {
                 finalScore += 0.15;
             }
 
-            // Bonus for having a good response_template
-            if (atomic.response_template && atomic.response_template.length > 10) {
-                finalScore += 0.1;
+            // Bonus for having good response_template
+            if (atomic.response_template && atomic.response_template.length > 15) {
+                finalScore += 0.12;
+            }
+
+            // Bonus for having examples (shows the atomic is well fleshed out)
+            if (atomic.examples && atomic.examples.length > 0) {
+                finalScore += 0.08;
             }
 
             if (finalScore > bestScore) {
@@ -155,20 +159,19 @@ function tryDirectSymbolicResponse(input) {
         }
     }
 
-    // Threshold for direct symbolic response (tuned to 0.68 for quality)
+    // Threshold for accepting a direct symbolic match
     if (bestMatch && bestScore >= 0.68) {
-        // Prefer response_template if available
-        if (bestMatch.response_template) {
-            return bestMatch.response_template;
-        }
-        
-        // Fallback: use clarifying_questions as a light prompt if no template
-        if (bestMatch.clarifying_questions && bestMatch.clarifying_questions.length > 0) {
-            return bestMatch.clarifying_questions[0].question;
+        let finalResponse = bestMatch.response_template || "I can help with that.";
+
+        // Add a relevant example if available (light few-shot style)
+        if (bestMatch.examples && bestMatch.examples.length > 0) {
+            const example = bestMatch.examples[0];
+            if (example && example.length > 10) {
+                finalResponse += "\n\nFor example: " + example;
+            }
         }
 
-        // Last resort: generic but safe
-        return "I can help with that. What specifically would you like to know or do?";
+        return finalResponse;
     }
 
     return null;
@@ -239,7 +242,6 @@ async function sendMessage() {
     } else if (evaluateMath(input) !== null) {
         response = `The answer is ${evaluateMath(input)}`;
     } else {
-        // High confidence path: try direct symbolic first
         if (confidence >= 0.65) {
             const directResponse = tryDirectSymbolicResponse(input);
             if (directResponse) {
