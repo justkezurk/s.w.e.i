@@ -2,7 +2,7 @@ let modelPipeline = null;
 let modelLoading = false;
 let modelReady = false;
 
-// Parameter system (loaded dynamically)
+// Parameter system
 let parameters = {
     routers: [],
     atomics: []
@@ -10,17 +10,13 @@ let parameters = {
 
 async function loadParameters() {
     try {
-        // Load key parameter files
         const routerFiles = [
             'src/parameters/stable/routing/conversation-routers.json',
-            'src/parameters/stable/routing/capabilities-routers.json',
-            'src/parameters/stable/routing/reasoning-routers.json'
+            'src/parameters/stable/routing/capabilities-routers.json'
         ];
-
         const atomicFiles = [
             'src/parameters/stable/atomic/conversation-atomic.json',
-            'src/parameters/stable/atomic/capability-atomic.json',
-            'src/parameters/stable/atomic/reasoning-atomic.json'
+            'src/parameters/stable/atomic/capability-atomic.json'
         ];
 
         for (const file of routerFiles) {
@@ -28,24 +24,17 @@ async function loadParameters() {
                 const res = await fetch(file);
                 const data = await res.json();
                 parameters.routers.push(...data);
-            } catch (e) {
-                console.warn('Could not load router file:', file);
-            }
+            } catch (e) {}
         }
-
         for (const file of atomicFiles) {
             try {
                 const res = await fetch(file);
                 const data = await res.json();
                 parameters.atomics.push(...data);
-            } catch (e) {
-                console.warn('Could not load atomic file:', file);
-            }
+            } catch (e) {}
         }
-
-        console.log(`Loaded ${parameters.routers.length} routers and ${parameters.atomics.length} atomics`);
     } catch (error) {
-        console.error('Error loading parameters:', error);
+        console.warn('Parameter loading issue:', error);
     }
 }
 
@@ -54,40 +43,52 @@ window.addEventListener('load', () => {
     loadParameters();
 });
 
-// Improved confidence scoring using parameter system
-function getConfidence(input) {
+// === GREETING SYSTEM ===
+const greetingTriggers = [
+    'hey', 'hello', 'hi', 'yo', 'sup', 'what\'s up', 'what up', 'watup', 'wadup',
+    'sup tho', 'what\'s good', 'whats good', 'aye', 'oi', 'how are you', 'how you doing',
+    'how you doin', 'wassup', 'wassgood', 'good morning', 'good afternoon', 'good evening'
+];
+
+const greetingResponses = [
+    "What's good.",
+    "What it do.",
+    "Chillen. What's up with you?",
+    "Not much, what you on?",
+    "I'm good, how you feeling?",
+    "Sup tho.",
+    "Chillen. You tryna get into something?",
+    "I'm straight. What's on your mind?",
+    "Yo. What's good with you?",
+    "Nothin' heavy. What you got going on?"
+];
+
+const conversationSeeds = [
+    "Is there anything you tryna talk about?",
+    "You got something specific on your mind?",
+    "You tryna get some shit done or just vibing?",
+    "Anything I can help you with?",
+    "What you got going on?"
+];
+
+function isGreeting(input) {
     const lower = input.toLowerCase().trim();
-    let bestScore = 0.3; // minimum base
-
-    // Check against loaded routers
-    for (const router of parameters.routers) {
-        if (!router.triggers || router.triggers.length === 0) continue;
-
-        for (const trigger of router.triggers) {
-            if (lower.includes(trigger.toLowerCase())) {
-                bestScore = Math.max(bestScore, (router.activation_threshold || 0.6) + 0.15);
-            }
-        }
-    }
-
-    // Check against atomics
-    for (const atomic of parameters.atomics) {
-        if (!atomic.triggers || atomic.triggers.length === 0) continue;
-
-        for (const trigger of atomic.triggers) {
-            if (lower.includes(trigger.toLowerCase())) {
-                bestScore = Math.max(bestScore, (atomic.activation_threshold || 0.7) + 0.1);
-            }
-        }
-    }
-
-    // Length and specificity bonuses
-    if (lower.length > 20) bestScore += 0.08;
-    if (lower.split(' ').length > 6) bestScore += 0.05;
-
-    return Math.max(0.15, Math.min(0.95, bestScore));
+    return greetingTriggers.some(trigger => lower.includes(trigger));
 }
 
+function getGreetingResponse() {
+    let response = greetingResponses[Math.floor(Math.random() * greetingResponses.length)];
+    
+    // Occasionally add a light conversation seed
+    if (Math.random() < 0.45) {
+        const seed = conversationSeeds[Math.floor(Math.random() * conversationSeeds.length)];
+        response += " " + seed;
+    }
+    
+    return response;
+}
+
+// === NEURAL FALLBACK ===
 async function initFallbackModel() {
     if (modelPipeline || modelLoading) return;
     modelLoading = true;
@@ -99,7 +100,6 @@ async function initFallbackModel() {
             { quantized: true }
         );
         modelReady = true;
-        console.log('Neural fallback model ready');
     } catch (error) {
         console.error('Failed to load fallback model:', error);
         modelPipeline = null;
@@ -118,8 +118,7 @@ async function getNeuralFallback(prompt, options = {}) {
         }
 
         const systemPrompt = `You are S.W.E.I, a helpful and direct AI assistant.
-Give clear, concise answers. Avoid asking too many clarifying questions unless truly necessary.
-Be useful even with incomplete information.`;
+Give clear, concise answers. Avoid asking too many clarifying questions unless truly necessary.`;
 
         const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}\n\nAssistant:`;
 
@@ -127,8 +126,7 @@ Be useful even with incomplete information.`;
             max_new_tokens: options.maxTokens || 160,
             temperature: options.temperature || 0.65,
             do_sample: true,
-            top_p: 0.9,
-            repetition_penalty: 1.1
+            top_p: 0.9
         });
 
         let response = result[0].generated_text.trim();
@@ -141,30 +139,50 @@ Be useful even with incomplete information.`;
         }
 
         response = response.replace(/^(Sure|Okay|Alright)[,.]?\s*/i, '');
-
         return response || "Let me approach that differently...";
     } catch (error) {
-        console.error('Neural fallback error:', error);
-        return "I'm having trouble processing that. Try rephrasing?";
+        return "I'm having trouble with that right now. Try rephrasing?";
     }
+}
+
+// === CONFIDENCE + MAIN LOGIC ===
+function getConfidence(input) {
+    const lower = input.toLowerCase().trim();
+    let bestScore = 0.35;
+
+    for (const router of parameters.routers) {
+        if (!router.triggers) continue;
+        for (const trigger of router.triggers) {
+            if (lower.includes(trigger.toLowerCase())) {
+                bestScore = Math.max(bestScore, (router.activation_threshold || 0.6) + 0.1);
+            }
+        }
+    }
+
+    for (const atomic of parameters.atomics) {
+        if (!atomic.triggers) continue;
+        for (const trigger of atomic.triggers) {
+            if (lower.includes(trigger.toLowerCase())) {
+                bestScore = Math.max(bestScore, (atomic.activation_threshold || 0.65) + 0.08);
+            }
+        }
+    }
+
+    if (lower.length > 18) bestScore += 0.07;
+    return Math.max(0.2, Math.min(0.95, bestScore));
 }
 
 function evaluateMath(input) {
     try {
-        if (/^[0-9\s+\-*/().]+$/.test(input)) {
-            return eval(input);
-        }
+        if (/^[0-9\s+\-*/().]+$/.test(input)) return eval(input);
         return null;
-    } catch {
-        return null;
-    }
+    } catch { return null; }
 }
 
 function needsClarification(input) {
     const lower = input.toLowerCase().trim();
     if (lower.length < 4) return true;
     if (lower.includes('what do you') || lower.includes('how do you')) return true;
-    if (['hi', 'hello', 'hey'].includes(lower)) return false;
     return false;
 }
 
@@ -173,7 +191,6 @@ async function sendMessage() {
     if (!input) return;
 
     const messagesDiv = document.getElementById('messages');
-    
     messagesDiv.innerHTML += `<div class="message user">${input}</div>`;
     document.getElementById('userInput').value = '';
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -183,15 +200,23 @@ async function sendMessage() {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
     let response = '';
-    const confidence = getConfidence(input);
 
-    const mathResult = evaluateMath(input);
-    if (mathResult !== null) {
-        response = `The answer is ${mathResult}`;
-    } else if (confidence < 0.52 || needsClarification(input)) {
-        response = await getNeuralFallback(input, { maxTokens: 160, temperature: 0.65 });
-    } else {
-        response = await getNeuralFallback(input, { maxTokens: 140, temperature: 0.6 });
+    // 1. Handle greetings directly with natural responses
+    if (isGreeting(input)) {
+        response = getGreetingResponse();
+    }
+    // 2. Math
+    else if (evaluateMath(input) !== null) {
+        response = `The answer is ${evaluateMath(input)}`;
+    }
+    // 3. Low confidence or needs clarification → neural fallback
+    else {
+        const confidence = getConfidence(input);
+        if (confidence < 0.52 || needsClarification(input)) {
+            response = await getNeuralFallback(input);
+        } else {
+            response = await getNeuralFallback(input, { maxTokens: 140, temperature: 0.6 });
+        }
     }
 
     const thinkingEl = document.getElementById(thinkingId);
@@ -199,8 +224,4 @@ async function sendMessage() {
 
     messagesDiv.innerHTML += `<div class="message assistant">${response}</div>`;
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-    if (!modelReady && !modelLoading) {
-        initFallbackModel();
-    }
 }
