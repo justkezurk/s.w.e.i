@@ -1,95 +1,135 @@
-const messagesDiv = document.getElementById('messages');
-const input = document.getElementById('input');
+let modelPipeline = null;
+let modelLoading = false;
 
-let conversationHistory = [];
-
-// Simple deterministic math evaluator
-function evaluateMath(expression) {
-  try {
-    // Very basic safe eval for common math
-    const sanitized = expression.replace(/[^0-9+\-*/().\s]/g, '');
-    if (!sanitized) return null;
-    // eslint-disable-next-line no-eval
-    const result = eval(sanitized);
-    if (typeof result === 'number' && isFinite(result)) {
-      return result;
+// Load a small capable model for fallback
+async function loadFallbackModel() {
+    if (modelPipeline || modelLoading) return modelPipeline;
+    modelLoading = true;
+    
+    try {
+        // Using a small, efficient model good for reasoning
+        modelPipeline = await window.transformers.pipeline(
+            'text-generation',
+            'Xenova/Phi-3-mini-4k-instruct',
+            { 
+                quantized: true,
+                progress_callback: (progress) => {
+                    if (progress.status === 'done') {
+                        console.log('Fallback model loaded successfully');
+                    }
+                }
+            }
+        );
+        console.log('Neural fallback model ready');
+    } catch (error) {
+        console.error('Failed to load fallback model:', error);
+        modelPipeline = null;
     }
-  } catch (e) {
-    return null;
-  }
-  return null;
+    
+    modelLoading = false;
+    return modelPipeline;
 }
 
-function addMessage(text, isUser = false) {
-  const div = document.createElement('div');
-  div.className = `message ${isUser ? 'user' : 'swei'}`;
-  div.textContent = text;
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  conversationHistory.push({ role: isUser ? 'user' : 'swei', content: text });
+// Neural fallback when symbolic system has low confidence
+async function getNeuralFallback(prompt) {
+    try {
+        if (!modelPipeline) {
+            await loadFallbackModel();
+        }
+        
+        if (!modelPipeline) {
+            return "I'm still building my understanding in that area. Could you rephrase or give me a bit more context?";
+        }
+
+        const result = await modelPipeline(prompt, {
+            max_new_tokens: 180,
+            temperature: 0.7,
+            do_sample: true,
+            top_p: 0.9,
+        });
+
+        let response = result[0].generated_text.trim();
+        
+        // Clean up common artifacts
+        if (response.startsWith(prompt)) {
+            response = response.slice(prompt.length).trim();
+        }
+        
+        return response || "Let me think about that differently...";
+    } catch (error) {
+        console.error('Neural fallback error:', error);
+        return "I'm having trouble processing that right now. Can you try rephrasing?";
+    }
 }
 
-function showTyping() {
-  const div = document.createElement('div');
-  div.className = 'message swei';
-  div.id = 'typing';
-  div.textContent = 'S.W.E.I is thinking...';
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  return div;
+// Basic math evaluation (kept from previous version)
+function evaluateMath(input) {
+    try {
+        // Very basic math parser - can be expanded later
+        if (/^[0-9\s+\-*/().]+$/.test(input)) {
+            return eval(input);
+        }
+        return null;
+    } catch {
+        return null;
+    }
 }
 
-function removeTyping() {
-  const typing = document.getElementById('typing');
-  if (typing) typing.remove();
-}
-
-// Very basic clarifying question logic
-function needsClarification(text) {
-  const lower = text.toLowerCase();
-  const vagueWords = ['how', 'what', 'why', 'help', 'do', 'make', 'explain'];
-  const hasVague = vagueWords.some(w => lower.includes(w));
-  const isShort = text.split(' ').length < 5;
-  return hasVague && isShort;
+function needsClarification(input) {
+    const lower = input.toLowerCase().trim();
+    
+    // Simple heuristics for now
+    if (lower.length < 4) return true;
+    if (lower.includes('what do you') || lower.includes('how do you')) return true;
+    if (lower === 'hi' || lower === 'hello') return false;
+    
+    return false;
 }
 
 async function sendMessage() {
-  const text = input.value.trim();
-  if (!text) return;
+    const input = document.getElementById('userInput').value.trim();
+    if (!input) return;
 
-  addMessage(text, true);
-  input.value = '';
+    const messagesDiv = document.getElementById('messages');
+    
+    // Add user message
+    messagesDiv.innerHTML += `<div class="message user">${input}</div>`;
+    document.getElementById('userInput').value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-  const typing = showTyping();
+    // Show thinking indicator
+    const thinkingId = 'thinking-' + Date.now();
+    messagesDiv.innerHTML += `<div id="${thinkingId}" class="message assistant" style="opacity:0.6">Thinking...</div>`;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-  setTimeout(() => {
-    removeTyping();
+    let response = '';
 
-    // 1. Check for math first (deterministic)
-    const mathResult = evaluateMath(text);
+    // 1. Try math first
+    const mathResult = evaluateMath(input);
     if (mathResult !== null) {
-      addMessage(`The answer is: ${mathResult}`);
-      return;
+        response = `The answer is ${mathResult}`;
+    } 
+    // 2. Check if clarification is needed
+    else if (needsClarification(input)) {
+        // Use neural fallback for clarification cases instead of generic message
+        response = await getNeuralFallback(`The user asked: "${input}". Give a helpful, direct response without asking too many questions back.`);
+    } 
+    // 3. Otherwise use neural fallback for general cases (hybrid approach)
+    else {
+        // For now, route most things through neural fallback until full router system is wired
+        response = await getNeuralFallback(input);
     }
 
-    // 2. Check if we need clarifying questions
-    if (needsClarification(text)) {
-      addMessage("To give you a better answer, could you tell me a bit more? For example, what are you trying to achieve or what level of detail are you looking for?");
-      return;
+    // Remove thinking indicator
+    const thinkingEl = document.getElementById(thinkingId);
+    if (thinkingEl) thinkingEl.remove();
+
+    // Add assistant response
+    messagesDiv.innerHTML += `<div class="message assistant">${response}</div>`;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    // Preload model in background for faster future responses
+    if (!modelPipeline && !modelLoading) {
+        loadFallbackModel();
     }
-
-    // 3. General conversation fallback (will improve with parameters later)
-    const responses = [
-      "Got it. Can you give me a bit more context so I can help properly?",
-      "Interesting. What specifically would you like to know or do with that?",
-      "I'm here to help. Could you rephrase or add more details?",
-      "Thanks for the question. To respond accurately, I may need to ask a couple of clarifying questions first."
-    ];
-    const randomReply = responses[Math.floor(Math.random() * responses.length)];
-    addMessage(randomReply);
-
-  }, 650);
 }
-
-// Initial greeting
-addMessage("Hello! I'm S.W.E.I. I can help with general questions, do basic math, and I'll ask clarifying questions when it helps give you a better answer.");
